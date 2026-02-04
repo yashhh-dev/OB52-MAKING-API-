@@ -26,7 +26,6 @@ spam_chat_id = None
 spam_uid = None
 Spy = False
 Chat_Leave = False
-BOT_UID = None # Global variable initialize
 #------------------------------------------#
 
 app = Flask(__name__)
@@ -523,34 +522,25 @@ async def perform_emote(team_code: str, uids: list, emote_id: int):
         raise Exception("Bot not connected")
 
     try:
-        # 1. JOIN SQUAD (Packet Send)
+        # 1. JOIN SQUAD (super fast)
         EM = await GenJoinSquadsPacket(team_code, key, iv)
         await SEndPacKeT(None, online_writer, 'OnLine', EM)
-        
-        # Thoda wait karo taaki server join confirm kar le (0.3s best hai)
-        await asyncio.sleep(0.3) 
+        await asyncio.sleep(0.12)  # minimal sync delay
 
-        # 2. PERFORM EMOTE (Har player ke liye loop)
+        # 2. PERFORM EMOTE instantly
         for uid_str in uids:
             uid = int(uid_str)
-            # Emote packet
             H = await Emote_k(uid, emote_id, key, iv, region)
             await SEndPacKeT(None, online_writer, 'OnLine', H)
-            # Thoda sa gap taaki packet mix na ho
-            await asyncio.sleep(0.05) 
 
-        # 3. LEAVE SQUAD (Correct UID ke sath)
-        # Ab ye BOT_UID sahi wala lega jo login se aaya hai
-        if BOT_UID:
-             LV = await ExiT(BOT_UID, key, iv)
-             await SEndPacKeT(None, online_writer, 'OnLine', LV)
-        else:
-             print("Error: BOT_UID not set, cannot leave!")
+        # 3. LEAVE SQUAD instantly (correct bot UID)
+        LV = await ExiT(BOT_UID, key, iv)
+        await SEndPacKeT(None, online_writer, 'OnLine', LV)
+        await asyncio.sleep(0.03)
 
         return {"status": "success", "message": "Emote done & bot left instantly"}
 
     except Exception as e:
-        print(f"Error performing emote: {e}")
         raise Exception(f"Failed to perform emote: {str(e)}")
 
 
@@ -602,9 +592,10 @@ def run_flask():
 async def MaiiiinE():
     global loop, key, iv, region, BOT_UID
 
-    # NOTE: Hardcoded BOT_UID removed. Will fetch automatically.
-    
-    Uid, Pw = '4468571254', '10_NAJMI_ADMIN_4VROL'
+    # BOT LOGIN UID
+    BOT_UID = int('13781786920')  # <-- FIXED BOT UID
+
+    Uid, Pw = '4271931522', '76354302535BB6C038A33C33BAA3E2AAC1A644627A4968B409B87A1A91537B17'
 
     open_id, access_token = await GeNeRaTeAccEss(Uid, Pw)
     if not open_id or not access_token:
@@ -624,11 +615,6 @@ async def MaiiiinE():
 
     ToKen = MajoRLoGinauTh.token
     TarGeT = MajoRLoGinauTh.account_uid
-    
-    # --- AUTO FIX: Set BOT_UID dynamically ---
-    BOT_UID = int(TarGeT)
-    # -----------------------------------------
-
     key = MajoRLoGinauTh.key
     iv = MajoRLoGinauTh.iv
     timestamp = MajoRLoGinauTh.timestamp
